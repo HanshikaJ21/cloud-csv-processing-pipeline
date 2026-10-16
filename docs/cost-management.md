@@ -38,3 +38,7 @@ There is no reliable universal dollar estimate here: free allowances, credit bal
 5. Review Billing > Bills/Charges and Cost Explorer after usage data has had time to update. Check for other existing resources too; deleting this stack does not remove unrelated resources or undo charges already incurred.
 
 For local testing, pytest and the standard library run without AWS resources or AWS charges.
+
+## Optional Vercel-hosted UI
+
+Vercel is independent of AWS. Its current [Hobby plan](https://vercel.com/docs/plans/hobby) is documented as free for personal use and includes finite CDN/function quotas; over-limit behavior, plan terms, and eligibility should be checked in your Vercel account before deployment. The app does not require a paid Vercel feature, but uploading CSVs invokes a hosted function and uses transfer/compute resources. Do not upgrade, enable paid add-ons, attach a paid custom domain, or upload real confidential data for this demo. Read [vercel-deployment.md](vercel-deployment.md) and delete the Vercel project if you no longer want it hosted.

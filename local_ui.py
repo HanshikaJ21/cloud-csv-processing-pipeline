@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import mimetypes
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -12,10 +11,10 @@ from src.lambda_function import MAX_INPUT_BYTES, InvalidCSV, transform_csv
 
 ROOT = Path(__file__).resolve().parent
 STATIC_FILES = {
-    "/": (ROOT / "ui" / "index.html", "text/html; charset=utf-8"),
-    "/index.html": (ROOT / "ui" / "index.html", "text/html; charset=utf-8"),
-    "/app.js": (ROOT / "ui" / "app.js", "text/javascript; charset=utf-8"),
-    "/styles.css": (ROOT / "ui" / "styles.css", "text/css; charset=utf-8"),
+    "/": (ROOT / "public" / "index.html", "text/html; charset=utf-8"),
+    "/index.html": (ROOT / "public" / "index.html", "text/html; charset=utf-8"),
+    "/app.js": (ROOT / "public" / "app.js", "text/javascript; charset=utf-8"),
+    "/styles.css": (ROOT / "public" / "styles.css", "text/css; charset=utf-8"),
 }
 
 
@@ -51,6 +50,12 @@ class LocalUIHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         route = urlsplit(self.path).path
+        if route == "/api/info":
+            self._send_json(
+                200,
+                {"mode": "local", "max_input_bytes": MAX_INPUT_BYTES},
+            )
+            return
         asset = STATIC_FILES.get(route)
         if asset is None:
             self._send_json(404, {"status": "not_found", "error": "Page not found."})

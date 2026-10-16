@@ -15,7 +15,7 @@
         <span class="brand-mark" aria-hidden="true">C</span>
         <span>CSV<span class="brand-light">Studio</span></span>
       </a>
-      <span class="local-badge"><span class="status-dot"></span> LOCAL PROCESSING</span>
+      <span class="local-badge"><span class="status-dot"></span> <span id="processing-mode">CHECKING PROCESSOR</span></span>
     </header>
 
     <section class="intro">
@@ -30,7 +30,7 @@
           <p class="eyebrow">01 / UPLOAD</p>
           <h2 id="upload-heading">Choose a CSV file</h2>
         </div>
-        <span class="limit-note">Up to 5 MiB</span>
+        <span class="limit-note" id="size-limit">Up to 5 MiB</span>
       </div>
 
       <form id="upload-form">
@@ -49,7 +49,7 @@
           <button class="remove-file" id="remove-file" type="button" aria-label="Remove selected file">×</button>
         </div>
         <div class="form-actions">
-          <p class="privacy-note"><span aria-hidden="true">⌑</span> Your file stays on this device. Nothing is sent to AWS.</p>
+          <p class="privacy-note"><span aria-hidden="true">⌑</span> <span id="privacy-note">Checking where your file will be processed…</span></p>
           <button class="primary-button" id="process-button" type="submit" disabled>
             Process file <span aria-hidden="true">→</span>
           </button>
@@ -91,8 +91,8 @@
     </section>
 
     <footer>
-      <p><span class="footer-mark">✳</span> Decimal-accurate calculations. No upload. No cloud costs.</p>
-      <span>CSV STUDIO <span class="footer-separator">/</span> LOCAL DEMO</span>
+      <p><span class="footer-mark">✳</span> <span id="footer-notice">Checking processing location…</span></p>
+      <span>CSV STUDIO <span class="footer-separator">/</span> <span id="footer-mode">PROCESSOR CHECK</span></span>
     </footer>
   </main>
 </body>

@@ -27,3 +27,7 @@ Headers are trimmed and case-folded when matched. Products are trimmed for outpu
 The output key is a SHA-256 digest of the bucket, source key, S3 version ID (when present) or ETag, and the downloaded source bytes. `IfNoneMatch: *` makes creation conditional: a replay cannot overwrite an existing result. A repeated delivery reports `duplicate` and zero work for that invocation. Changed content yields a new output key rather than replacing an older result.
 
 S3 notifications do not provide exactly-once delivery. A failed S3 operation is logged without payload details and raised so Lambda's asynchronous retry policy can apply. Repeated output writes remain safe. Invalid input is reported as `rejected` and is not retried; the original object remains in `incoming/` for diagnosis or removal by its owner.
+
+## Optional browser hosting
+
+The browser UI can be hosted separately on Vercel: static assets in `public/` are served from Vercel's CDN, and a Python 3.14 FastAPI function in `app.py` reuses `transform_csv` for `/api/process`. Hosted uploads go to Vercel, not to the AWS bucket; the browser warns users and the function does not intentionally persist the CSV. The Vercel app does not invoke or replace the AWS S3/Lambda event pipeline. See [vercel-deployment.md](vercel-deployment.md).

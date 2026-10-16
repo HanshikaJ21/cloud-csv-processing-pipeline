@@ -1,6 +1,6 @@
 # Serverless CSV Processing Pipeline
 
-A small, event-driven AWS portfolio project that validates incoming sales CSV files, removes duplicate rows, calculates exact decimal revenue, and writes a cleaned CSV to a separate S3 prefix.
+A small, event-driven AWS portfolio project that validates incoming sales CSV files, removes duplicate rows, calculates exact decimal revenue, and writes a cleaned CSV to a separate S3 prefix. It also includes an optional local UI and Vercel hosting adapter for demonstrating the processor in a browser.
 
 > **Deployment is optional and not performed by this project setup.** AWS usage can incur charges. Check your account plan, remaining credits, region-specific rates, and the change set before deployment. If zero charges are a strict requirement and coverage cannot be confirmed, use the local tests only.
 
@@ -30,30 +30,35 @@ The suffix and prefix filter prevents output writes from triggering the function
 - Deduplication by trimmed/case-folded product, integer quantity, and numeric price.
 - Conditional writes to a deterministic output key based on source identity and bytes; repeated delivery cannot overwrite an existing result.
 - Private, SSE-S3 encrypted bucket; object-level least-privilege role; seven-day CloudWatch log retention.
-- No third-party runtime dependencies; tests use fake S3 clients and need no AWS account.
+- The AWS Lambda processor uses the Python standard library and Lambda-provided AWS SDK. The optional Vercel adapter uses FastAPI.
 
 ## Technology
 
-Python 3.14 on AWS Lambda, Amazon S3, IAM, CloudWatch Logs, AWS SAM/CloudFormation, pytest, Git.
+Python 3.14 on AWS Lambda and Vercel Functions, FastAPI, Amazon S3, IAM, CloudWatch Logs, AWS SAM/CloudFormation, pytest, Git.
 
 ## Repository layout
 
 ```text
 src/lambda_function.py         CSV processor and S3 Lambda handler
+app.py                         FastAPI endpoint for Vercel-hosted UI
 local_ui.py                    Optional localhost-only browser demo server
-ui/                            Browser interface assets
+public/                        Browser assets served locally and by Vercel CDN
+.python-version                Vercel Python runtime selection (3.14)
+vercel.json                    Vercel security response headers
 tests/test_processor.py        CSV rules, validation, Decimal/deduplication
 tests/test_lambda_handler.py   event, S3 error, idempotency, naming tests
+tests/test_vercel_app.py       FastAPI processing and upload-limit checks
 tests/test_local_ui.py         UI-to-processor integration checks
 sample-data/sales.csv          small sample input
 docs/architecture.md           flow and design choices
 docs/deployment.md             Console and SAM deployment/cleanup
 docs/security.md               least-privilege decisions
 docs/cost-management.md        account eligibility, cost controls, teardown
-docs/local-ui.md               local-only browser UI
+docs/local-ui.md               local browser UI
+docs/vercel-deployment.md      optional Vercel hosting instructions
 template.yaml                  SAM resources and event filter
-requirements.txt               runtime dependency note
-requirements-dev.txt           pytest
+requirements.txt               FastAPI runtime dependency for Vercel
+requirements-dev.txt           FastAPI test client and pytest
 ```
 
 ## Local setup and tests
@@ -72,6 +77,10 @@ These are local commands only. They do not access AWS or incur AWS charges. The 
 ## Local browser UI
 
 Run `python local_ui.py` from the project directory, then open <http://127.0.0.1:8000>. Choose or drop a CSV file to see validation results and download the cleaned output. The UI uses the same Python processor, binds only to localhost, and does not connect to AWS or send the file to a remote service. Stop it with `Ctrl+C`. See [local-ui.md](docs/local-ui.md).
+
+## Optional Vercel hosting
+
+The Vercel adapter hosts the UI and a small FastAPI processing endpoint; it does not deploy or connect the AWS S3/Lambda pipeline. When hosted, CSV contents are sent to Vercel for processing. The application does not intentionally persist the files, but do not upload confidential or personal data. The hosted endpoint caps uploads at 4 MiB; the AWS/local processor uses the 5 MiB limit. Review [vercel-deployment.md](docs/vercel-deployment.md) and Vercel’s current plan limits before enabling public hosting.
 
 ## Input and output example
 

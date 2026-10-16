@@ -10,15 +10,21 @@ const resultTitle = document.querySelector("#result-title");
 const resultStatus = document.querySelector("#result-status");
 const resultContent = document.querySelector("#result-content");
 const errorMessage = document.querySelector("#error-message");
+const processingMode = document.querySelector("#processing-mode");
+const sizeLimit = document.querySelector("#size-limit");
+const privacyNote = document.querySelector("#privacy-note");
+const footerNotice = document.querySelector("#footer-notice");
+const footerMode = document.querySelector("#footer-mode");
 
-const MAX_BYTES = 5 * 1024 * 1024;
+let maxBytes = 5 * 1024 * 1024;
 let selectedFile = null;
 let cleanedCsv = "";
+let processorReady = false;
 
 function formatBytes(bytes) {
   return bytes < 1024 * 1024
-    ? `${(bytes / 1024).toFixed(1)} KB`
-    : `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    ? `${(bytes / 1024).toFixed(1)} KiB`
+    : `${(bytes / (1024 * 1024)).toFixed(2)} MiB`;
 }
 
 function resetResult() {
@@ -35,12 +41,12 @@ function selectFile(file) {
   fileName.textContent = file.name;
   fileSize.textContent = formatBytes(file.size);
   fileRow.hidden = false;
-  processButton.disabled = false;
+  processButton.disabled = !processorReady;
   resetResult();
   if (!file.name.toLowerCase().endsWith(".csv")) {
     showError("Please choose a file with a .csv extension.");
-  } else if (file.size > MAX_BYTES) {
-    showError("This file is larger than the 5 MiB size limit.");
+  } else if (file.size > maxBytes) {
+    showError(`This file is larger than the ${formatBytes(maxBytes)} size limit.`);
   }
 }
 
@@ -55,6 +61,38 @@ function showError(message) {
 }
 
 fileInput.addEventListener("change", () => selectFile(fileInput.files[0]));
+
+async function loadProcessorInfo() {
+  try {
+    const response = await fetch("/api/info", { headers: { Accept: "application/json" } });
+    const info = await response.json();
+    if (!response.ok || typeof info.max_input_bytes !== "number") {
+      throw new Error("Processor information is unavailable.");
+    }
+    maxBytes = info.max_input_bytes;
+    const local = info.mode === "local";
+    processingMode.textContent = local ? "LOCAL PROCESSING" : "VERCEL PROCESSING";
+    footerMode.textContent = local ? "LOCAL DEMO" : "HOSTED DEMO";
+    sizeLimit.textContent = `Up to ${formatBytes(maxBytes)}`;
+    privacyNote.textContent = local
+      ? "Your file is sent only to the processor on this device. It is not uploaded to AWS."
+      : "Your file is sent to Vercel for processing. Do not use sensitive or confidential data.";
+    footerNotice.textContent = local
+      ? "Decimal-accurate calculations. Processing stays on this device."
+      : "Decimal-accurate calculations. Files are sent to Vercel and not saved by this app.";
+    processorReady = true;
+    processButton.disabled = !selectedFile;
+  } catch {
+    processingMode.textContent = "PROCESSOR UNAVAILABLE";
+    footerMode.textContent = "UNAVAILABLE";
+    privacyNote.textContent = "Cannot verify the processor. Reload before selecting a file.";
+    footerNotice.textContent = "The processor could not be verified.";
+    processorReady = false;
+    processButton.disabled = true;
+  }
+}
+
+loadProcessorInfo();
 
 document.querySelector("#remove-file").addEventListener("click", () => {
   selectedFile = null;
@@ -84,9 +122,13 @@ dropZone.addEventListener("drop", (event) => {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!selectedFile) return;
-  if (!selectedFile.name.toLowerCase().endsWith(".csv") || selectedFile.size > MAX_BYTES) {
-    showError(selectedFile.size > MAX_BYTES
-      ? "This file is larger than the 5 MiB size limit."
+  if (!processorReady) {
+    showError("The processor is unavailable. Reload the page and try again.");
+    return;
+  }
+  if (!selectedFile.name.toLowerCase().endsWith(".csv") || selectedFile.size > maxBytes) {
+    showError(selectedFile.size > maxBytes
+      ? `This file is larger than the ${formatBytes(maxBytes)} size limit.`
       : "Please choose a file with a .csv extension.");
     return;
   }
@@ -119,9 +161,9 @@ form.addEventListener("submit", async (event) => {
     resultContent.hidden = false;
     resultPanel.hidden = false;
   } catch {
-    showError("Could not reach the local processor. Check that it is running and try again.");
+    showError("Could not reach the processor. Check your connection and try again.");
   } finally {
-    processButton.disabled = !selectedFile;
+    processButton.disabled = !selectedFile || !processorReady;
     processButton.removeAttribute("aria-busy");
     processButton.innerHTML = 'Process file <span aria-hidden="true">→</span>';
   }
