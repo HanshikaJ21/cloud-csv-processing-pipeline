@@ -1,0 +1,120 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Private, event-driven CSV processing pipeline for a small portfolio demo.
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: Globally unique S3 bucket name (lowercase letters, numbers, and hyphens).
+    AllowedPattern: "^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+  MaxInputBytes:
+    Type: Number
+    Default: 5242880
+    MinValue: 1024
+    MaxValue: 5242880
+    Description: Maximum input object size, capped at 5 MiB.
+
+Resources:
+  CsvBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  ProcessorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${AWS::StackName}-csv-processor
+      RetentionInDays: 7
+
+  CsvProcessor:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${AWS::StackName}-csv-processor
+      CodeUri: src/
+      Handler: lambda_function.lambda_handler
+      Runtime: python3.14
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 15
+      ReservedConcurrentExecutions: 2
+      Environment:
+        Variables:
+          MAX_INPUT_BYTES: !Ref MaxInputBytes
+      LoggingConfig:
+        LogFormat: JSON
+        ApplicationLogLevel: INFO
+        SystemLogLevel: WARN
+      Policies:
+        - Statement:
+            - Sid: ReadIncomingObjectsOnly
+              Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:GetObjectVersion
+              Resource: !Sub arn:${AWS::Partition}:s3:::${BucketName}/incoming/*
+            - Sid: WriteProcessedObjectsOnly
+              Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Sub arn:${AWS::Partition}:s3:::${BucketName}/processed/*
+            - Sid: WriteFunctionLogs
+              Effect: Allow
+              Action:
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource: !Sub ${ProcessorLogGroup.Arn}:*
+      Events:
+        IncomingCsv:
+          Type: S3
+          Properties:
+            Bucket: !Ref CsvBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: incoming/
+                  - Name: suffix
+                    Value: .csv
+
+  RequireTlsForBucketAccess:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref CsvBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource:
+              - !GetAtt CsvBucket.Arn
+              - !Sub ${CsvBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+Outputs:
+  BucketName:
+    Description: Private S3 bucket. Upload test files beneath incoming/.
+    Value: !Ref CsvBucket
+  FunctionName:
+    Description: Lambda processor function.
+    Value: !Ref CsvProcessor
+  LogGroupName:
+    Description: Seven-day CloudWatch log group.
+    Value: !Ref ProcessorLogGroup

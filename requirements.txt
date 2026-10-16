@@ -1,0 +1,1 @@
+# The Lambda runtime provides boto3. No third-party runtime packages are required.

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>CSV Studio | Sales processor</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="CSV Studio home">
+        <span class="brand-mark" aria-hidden="true">C</span>
+        <span>CSV<span class="brand-light">Studio</span></span>
+      </a>
+      <span class="local-badge"><span class="status-dot"></span> LOCAL PROCESSING</span>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">SALES DATA WORKSPACE</p>
+      <h1>Make your data<br><span>work harder.</span></h1>
+      <p class="intro-copy">Clean up sales records, remove duplicates, and calculate revenue in a few seconds.</p>
+    </section>
+
+    <section class="workspace" aria-labelledby="upload-heading">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">01 / UPLOAD</p>
+          <h2 id="upload-heading">Choose a CSV file</h2>
+        </div>
+        <span class="limit-note">Up to 5 MiB</span>
+      </div>
+
+      <form id="upload-form">
+        <label id="drop-zone" class="drop-zone" for="file-input">
+          <span class="upload-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15.5v3A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="drop-title">Drop your CSV here</span>
+          <span class="drop-subtitle">or <span class="browse-link">browse files</span> on your device</span>
+          <input id="file-input" name="file" type="file" accept=".csv,text/csv">
+        </label>
+        <div class="file-row" id="file-row" hidden>
+          <span class="file-icon" aria-hidden="true">CSV</span>
+          <span class="file-name" id="file-name"></span>
+          <span class="file-size" id="file-size"></span>
+          <button class="remove-file" id="remove-file" type="button" aria-label="Remove selected file">×</button>
+        </div>
+        <div class="form-actions">
+          <p class="privacy-note"><span aria-hidden="true">⌑</span> Your file stays on this device. Nothing is sent to AWS.</p>
+          <button class="primary-button" id="process-button" type="submit" disabled>
+            Process file <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section id="result-panel" class="result-panel" aria-live="polite" hidden>
+      <div class="section-heading result-heading">
+        <div>
+          <p class="eyebrow">02 / RESULTS</p>
+          <h2 id="result-title">Your file is ready</h2>
+        </div>
+        <span id="result-status" class="result-status"></span>
+      </div>
+      <div id="error-message" class="error-message" role="alert" hidden></div>
+      <div id="result-content">
+        <div class="metrics">
+          <article class="metric-card">
+            <span class="metric-label">ROWS KEPT</span>
+            <strong id="rows-processed">0</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">DUPLICATES REMOVED</span>
+            <strong id="duplicates-removed">0</strong>
+          </article>
+          <article class="metric-card revenue-card">
+            <span class="metric-label">TOTAL REVENUE</span>
+            <strong id="total-revenue">0.00</strong>
+          </article>
+        </div>
+        <div class="download-row">
+          <p>Cleaned file is ready to save.</p>
+          <button id="download-button" class="secondary-button" type="button">
+            <span aria-hidden="true">↓</span> Download CSV
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p><span class="footer-mark">✳</span> Decimal-accurate calculations. No upload. No cloud costs.</p>
+      <span>CSV STUDIO <span class="footer-separator">/</span> LOCAL DEMO</span>
+    </footer>
+  </main>
+</body>
+</html>
